@@ -1,6 +1,3 @@
-graphics
-========
-
 # Computer Graphics Project
 # Friday May 24: Final program
 ## File formats
