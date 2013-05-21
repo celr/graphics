@@ -1,0 +1,53 @@
+﻿Build started 5/21/2013 4:40:21 PM.
+     1>Project "C:\Users\CarlosE\Documents\GitHub\graphics\Final Project\Final Project\Final Project.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt "Final Project.cpp" stdafx.cpp
+         stdafx.cpp
+         Final Project.cpp
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(150): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(218) : see declaration of 'fopen'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(244): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(251): warning C4244: 'argument' : conversion from 'double' to 'int', possible loss of data
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(300): warning C4244: '=' : conversion from 'double' to 'uchar', possible loss of data
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(363): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\string.h(110) : see declaration of 'strcpy'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(369): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(374): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(379): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(381): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(383): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(388): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(390): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(392): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(397): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(399): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(401): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(406): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(411): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(416): warning C4996: 'sscanf': This function or variable may be unsafe. Consider using sscanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(311) : see declaration of 'sscanf'
+     1>c:\users\carlose\documents\github\graphics\final project\final project\final project.cpp(620): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 11.0\vc\include\stdio.h(218) : see declaration of 'fopen'
+         Generating Code...
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\CarlosE\Documents\GitHub\graphics\Final Project\Debug\Final Project.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\CarlosE\Documents\GitHub\graphics\Final Project\Debug\Final Project.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\CarlosE\Documents\GitHub\graphics\Final Project\Debug\Final Project.lib" /MACHINE:X86 "Debug\Final Project.obj"
+         Debug\stdafx.obj
+         Final Project.vcxproj -> C:\Users\CarlosE\Documents\GitHub\graphics\Final Project\Debug\Final Project.exe
+     1>Done Building Project "C:\Users\CarlosE\Documents\GitHub\graphics\Final Project\Final Project\Final Project.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:04.81

@@ -1,0 +1,29 @@
+﻿Build started 4/5/2013 4:41:13 AM.
+     1>Project "C:\Users\CarlosE\Documents\Visual Studio 2012\Projects\Practica2Graficos\Practica2Graficos\Practica2Graficos.vcxproj" on node 2 (Build target(s)).
+     1>ClCompile:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _CRT_SECURE_NO_WARNINGS /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Yu"stdafx.h" /Fp"Debug\Practica2Graficos.pch" /Fo"Debug\\" /Fd"Debug\vc110.pdb" /Gd /TP /analyze- /errorReport:prompt Practica2Graficos.cpp
+         Practica2Graficos.cpp
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(76): warning C4101: 'k' : unreferenced local variable
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(117): warning C4309: '=' : truncation of constant value
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(139): warning C4305: 'initializing' : truncation from 'double' to 'float'
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(143): warning C4244: 'argument' : conversion from 'int' to 'float', possible loss of data
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(150): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(155): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(160): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(165): warning C4305: '=' : truncation from 'double' to 'float'
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(188): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(191): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(210): warning C4244: 'argument' : conversion from 'float' to 'int', possible loss of data
+     1>c:\users\carlose\documents\visual studio 2012\projects\practica2graficos\practica2graficos\practica2graficos.cpp(213): warning C4018: '<' : signed/unsigned mismatch
+       Link:
+         C:\Program Files (x86)\Microsoft Visual Studio 11.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\CarlosE\Documents\Visual Studio 2012\Projects\Practica2Graficos\Debug\Practica2Graficos.exe" /INCREMENTAL /NOLOGO kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\CarlosE\Documents\Visual Studio 2012\Projects\Practica2Graficos\Debug\Practica2Graficos.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\CarlosE\Documents\Visual Studio 2012\Projects\Practica2Graficos\Debug\Practica2Graficos.lib" /MACHINE:X86 Debug\LinearTransform.obj
+         Debug\Matrix.obj
+         Debug\Point.obj
+         Debug\Practica2Graficos.obj
+         Debug\stdafx.obj
+         Practica2Graficos.vcxproj -> C:\Users\CarlosE\Documents\Visual Studio 2012\Projects\Practica2Graficos\Debug\Practica2Graficos.exe
+     1>Done Building Project "C:\Users\CarlosE\Documents\Visual Studio 2012\Projects\Practica2Graficos\Practica2Graficos\Practica2Graficos.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:04.25
