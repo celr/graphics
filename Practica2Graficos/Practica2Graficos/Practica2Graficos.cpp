@@ -17,14 +17,37 @@
  */
 
 #include "Practica2Graficos.h"
+
+typedef unsigned char uchar;
+
+typedef struct
+{
+	uchar r;
+	uchar g;
+	uchar b;
+} Color;
+
+const Color COLOR_BLACK = {0, 0, 0};
+const Color COLOR_WHITE = {255, 255, 255};
+
+typedef struct
+{
+	Color **col;
+	int w;
+	int h;
+	double **z;
+} Canvas;
+
 int abs(int a);
 void swap(int *, int *);
 
-char ***createCanvas(int, int);
-void canvasToPPM(char ***, int, int, char *);
-void orderPairs(int *, int *, int *, int *);
-void drawPixel(char ***, int, int);
-void drawLine(char ***, int, int, int, int, int, int, int);
+Canvas *createCanvas(int, int);
+void canvasToPPM(Canvas *, const char *);
+void drawPixel(Canvas *, int, int, Color);
+void drawPixelZ(Canvas *, int, int, double, Color);
+void drawLine(Canvas *, int, int, int, int, Color);
+void drawTriangle(Canvas *, int, int, double, int, int, double, int, int, double, Color);
+
 
 Matrix *matrixFromRaw(char *fileName, vector<int> *lineEndings) {
 	ifstream file;
@@ -54,10 +77,6 @@ Matrix *matrixFromRaw(char *fileName, vector<int> *lineEndings) {
 	return m;
 }
 
-int abs(int a) {
-	return (a > 0) ? a : -a;
-}
-
 void swap(int *a, int *b) {
 	int c;
 	c = *a;
@@ -65,70 +84,209 @@ void swap(int *a, int *b) {
 	*b = c;
 }
 
-void orderPairs(int *x_1, int *y_1, int *x_2, int *y_2) {
-	if (*x_1 > *x_2) {
-		swap(x_1, x_2);
-		swap(y_1, y_2);
-	}
+void swapDouble(double *a, double *b) {
+	double c;
+	c = *a;
+	*a = *b;
+	*b = c;
 }
 
-void drawPixel(char ***canvas, int x, int y, int r, int g, int b) {
-	int k;
-	if (x < 0 || y < 0 || x >= 1920 || y >= 1080)
+void drawPixelZ(Canvas *canvas, int x, int y, double z, Color c) {
+	if (x < 0 || y < 0 || x >= canvas->w || y >= canvas->h)
 		return;
-	canvas[x][y][0] = g;
-	canvas[x][y][1] = b;
-	canvas[x][y][2] = r;
+	if (z > canvas->z[x][y] || z < 0)
+		return;
+	canvas->z[x][y] = z;
+	canvas->col[x][y] = c;
 }
 
-void drawLine(char ***canvas, int x_1, int y_1, int x_2, int y_2, int r, int g, int b) {
+void drawPixel(Canvas *canvas, int x, int y, Color c) {
+	if (x < 0 || y < 0 || x >= canvas->w || y >= canvas->h)
+		return;
+	canvas->col[x][y] = c;
+}
+
+void drawLine(Canvas *canvas, int x_1, int y_1, int x_2, int y_2, Color c) {
 	int sx, sy;
 	int err, e2;
 	int dx, dy;
-	dx = abs(x_2-x_1);
-	dy = abs(y_2-y_1); 
-	sx = (x_1 < x_2) ? 1  : -1;
-	sy = (y_1 < y_2) ? 1  : -1;
+	dx = abs(x_2 - x_1);
+	dy = abs(y_2 - y_1);
+	sx = (x_1 < x_2) ? 1 : -1;
+	sy = (y_1 < y_2) ? 1 : -1;
 	err = dx - dy;
-	drawPixel(canvas, x_1, y_1, r, g, b);
+	drawPixel(canvas, x_1, y_1, c);
 	while (x_1 != x_2 || y_1 != y_2) {
 		e2 = 2 * err;
 		if (e2 > -dy) { 
 			err -= dy;
 			x_1 += sx;
 		}
-		if (e2 <  dx) { 
+		if (e2 < dx) { 
 			err += dx;
-			y_1 +=  sy; 
+			y_1 += sy; 
 		}
-		drawPixel(canvas, x_1, y_1, r, g, b);
+		drawPixel(canvas, x_1, y_1, c);
 	}
 }
 
-char ***createCanvas(int w, int h) {
-	int i, j, k;
-	char ***canvas;
-	canvas = (char ***)malloc(w * sizeof(char **));
+void drawScanline(Canvas *canvas, int x_1, int x_2, int y, double z_1, double z_2, Color c)
+{
+	double dz, mz;
+	if (x_1 > x_2)
+	{
+		swap(&x_1, &x_2);
+		swapDouble(&z_1, &z_2);
+	}
+	dz = (z_2 - z_1) / (x_2 - x_1);
+	mz = z_1;
+	while (x_1 <= x_2)
+	{
+		drawPixelZ(canvas, x_1, y, mz, c);
+		x_1++;
+		mz += dz;
+	}
+}
+
+void drawTriangle(Canvas *canvas, int x_1, int y_1, double z_1, int x_2, int y_2, double z_2, int x_3, int y_3, double z_3, Color c)
+{
+	int dx_1, dy_1, dx_2, dy_2, sx_1, sx_2;
+	double dz_1, dz_2;
+	int mx_1, mx_2, y;
+	double mz_1, mz_2;
+	int err_1, err_2;
+	if (y_2 < y_1)
+	{
+		swap(&x_1, &x_2);
+		swap(&y_1, &y_2);
+		swapDouble(&z_1, &z_2);
+	}
+	if (y_3 < y_1)
+	{
+		swap(&x_1, &x_3);
+		swap(&y_1, &y_3);
+		swapDouble(&z_1, &z_3);
+	}
+	if (y_3 < y_2)
+	{
+		swap(&x_2, &x_3);
+		swap(&y_2, &y_3);
+		swapDouble(&z_2, &z_3);
+	}
+	dx_2 = abs(x_3 - x_1);
+	sx_2 = (x_3 > x_1) ? 1 : -1;
+	dy_2 = y_3 - y_1;
+	if (y_1 == y_2)
+	{
+		if (y_2 == y_3)
+		{
+			drawScanline(canvas, x_1, x_2, y_1, z_1, z_2, c);
+			drawScanline(canvas, x_2, x_3, y_1, z_2, z_3, c);
+			return;
+		}
+		drawScanline(canvas, x_1, x_2, y_1, z_1, z_2, c);
+		err_2 = dx_2;
+		mx_2 = x_1 + sx_2 * (err_2 / dy_2);
+		err_2 = err_2 % dy_2;
+		dz_2 = (z_3 - z_1) / dy_2; 
+		mz_2 = z_1 + dz_2;
+	}
+	else
+	{
+		dx_1 = abs(x_2 - x_1);
+		sx_1 = (x_2 > x_1) ? 1 : -1;
+		dy_1 = y_2 - y_1;
+		y = y_1;
+		mx_1 = mx_2 = x_1;
+		err_1 = err_2 = 0;
+		dz_1 = (z_2 - z_1) / dy_1;
+		dz_2 = (z_3 - z_1) / dy_2;
+		mz_1 = mz_2 = z_1;
+		while (y <= y_2)
+		{
+			drawScanline(canvas, mx_1, mx_2, y, mz_1, mz_2, c);
+			y++;
+			err_1 += dx_1;
+			err_2 += dx_2;
+			mx_1 += sx_1 * (err_1 / dy_1);
+			mx_2 += sx_2 * (err_2 / dy_2);
+			err_1 = err_1 % dy_1;
+			err_2 = err_2 % dy_2;
+			mz_1 += dz_1;
+			mz_2 += dz_2;
+		}
+	}
+	if (y_2 != y_3)
+	{
+		dx_1 = abs(x_3 - x_2);
+		dy_1 = y_3 - y_2;
+		sx_1 = (x_3 > x_2) ? 1 : -1;
+		y = y_2 + 1;
+		mx_1 = x_2 + sx_1 * (dx_1 / dy_1);
+		err_1 = dx_1 % dy_1;
+		dz_1 = (z_3 - z_2) / dy_1;
+		mz_1 = z_2 + dz_1;
+		while(y <= y_3)
+		{
+			drawScanline(canvas, mx_1, mx_2, y, mz_1, mz_2, c);
+			y++;
+			err_1 += dx_1;
+			err_2 += dx_2;
+			mx_1 += sx_1 * (err_1 / dy_1);
+			mx_2 += sx_2 * (err_2 / dy_2);
+			err_1 = err_1 % dy_1;
+			err_2 = err_2 % dy_2;
+			mz_1 += dz_1;
+			mz_2 += dz_2;
+		}
+	}
+}
+
+Canvas *createCanvas(int w, int h) {
+	int i, j;
+	Canvas *c;
+	double **z;
+	Color **col;
+	col = new Color*[w];
+	z = new double*[w];
 	for (i = 0; i < w; i++) {
-		canvas[i] = (char **)malloc(h * sizeof(char *));
+		col[i] = new Color[h];
+		z[i] = new double[w];
 		for (j = 0; j < h; j++) {
-			canvas[i][j] = (char *)malloc(3 * sizeof(char));
-			for (k = 0; k < 3; k++)
-				canvas[i][j][k] = 255;
+			col[i][j] = COLOR_BLACK;
+			z[i][j] = numeric_limits<double>::max();
 		}
 	}
-	return canvas;
+	c = new Canvas;
+	c->col = col;
+	c->w = w;
+	c->h = h;
+	c->z = z;
+	return c;
 }
 
-void canvasToPPM(char ***canvas, int w, int h, char *filename) {
+void canvasToPPM(Canvas *canvas, const char *filename) {
 	FILE *out;
 	int i, j;
 	out = fopen(filename, "w");
-	fprintf(out, "P6\n%d %d\n255\n", w, h);
-	for (j = h - 1; j >= 0; j--)
-		for (i = 0; i < w; i++)
-			fwrite(canvas[i][j], 1, 3, out);
+	fprintf(out, "P6\n%d %d\n%d\n", canvas->w, canvas->h, 255);
+	for (j = canvas->h - 1; j >= 0; j--)
+		for (i = 0; i < canvas->w; i++)
+		{
+			fwrite(&canvas->col[i][j].r, 1, 1, out);
+			fwrite(&canvas->col[i][j].g, 1, 1, out);
+			fwrite(&canvas->col[i][j].b, 1, 1, out);
+		}
 	fclose(out);
+}
+
+Point pointDiff(Matrix *a, Matrix *b)
+{
+	Point c;
+	c.x = a->getValue(0, 0) - b->getValue(0, 0);
+	c.y = a->getValue(1, 0) - b->getValue(1, 0);
+	c.z = a->getValue(2, 0) - b->getValue(2, 0);
+	return c;
 }
 
 int _tmain(int argc, _TCHAR* argv[])
@@ -139,40 +297,29 @@ int _tmain(int argc, _TCHAR* argv[])
 	float d = 0.2; // Distancia entre ojos
 
 	vector<int> lineEndings;
-	Matrix *mx = matrixFromRaw("cube.raw", &lineEndings);
+	Matrix *mx = matrixFromRaw("in.raw", &lineEndings);
 	Matrix *mx2 = LinearTransform::getViewportTransform(w, h);
 	Matrix *mx3 = mx2->multiply(LinearTransform::getOrthographicTransform(-5, 5, -5, 5, -5, 5));
 	Matrix *mx4 = mx3->multiply(LinearTransform::getPerspectiveTransform(-2, 2));
 
 	Point eye;
-	eye.x = 2;
+	eye.x = 0;
 	eye.y = 0;
-	eye.z = 0.1;
-
-	Point eye2;
-	eye2.x = 2;
-	eye2.y = d; // Distancia entre ojos
-	eye2.z = 0.1;
+	eye.z = 3;
 
 	Point gaze;
-	gaze.x = -1;
+	gaze.x = 0;
 	gaze.y = 0;
-	gaze.z = -0.3;
-
-	Point gaze2;
-	gaze2.x = -1;
-	gaze2.y = 0;
-	gaze2.z = -0.3;
+	gaze.z = 1;
 
 	Point top;
 	top.x = 0;
-	top.y = 0;
-	top.z = 1;
+	top.y = 1;
+	top.z = 0;
 
 	Matrix *mx5 = mx4->multiply(LinearTransform::getCameraTransform(eye, gaze, top));
-	Matrix *mx52 = mx4->multiply(LinearTransform::getCameraTransform(eye2, gaze2, top));
 
-	char ***canvas = createCanvas(w, h);
+	Canvas *canvas = createCanvas(w, h);
 
 	Matrix *prev = NULL;
 
@@ -185,7 +332,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		Matrix *r = mx5->multiply(point);
 
 		if (prev != NULL) {
-			drawLine(canvas, prev->getValue(0, 0) / prev->getValue(3, 0), prev->getValue(1, 0) / prev->getValue(3, 0), r->getValue(0, 0) / r->getValue(3, 0), r->getValue(1, 0) / r->getValue(3, 0), 255, 0, 0);
+			drawLine(canvas, prev->getValue(0, 0) / prev->getValue(3, 0), prev->getValue(1, 0) / prev->getValue(3, 0), r->getValue(0, 0) / r->getValue(3, 0), r->getValue(1, 0) / r->getValue(3, 0), COLOR_WHITE);
 		}
 
 		if (k < lineEndings.size() && i == lineEndings[k]) {
@@ -195,29 +342,51 @@ int _tmain(int argc, _TCHAR* argv[])
 			prev = r;
 		}
 	}
-
-	prev = NULL;
-
-	for (int i = 0, k = 0; i < mx->cols; i++) {
-		Matrix *point = new Matrix(4, 1);
-		point->setValue(0, 0, mx->getValue(0, i));
-		point->setValue(1, 0, mx->getValue(1, i));
-		point->setValue(2, 0, mx->getValue(2, i));
-		point->setValue(3, 0, 1);
-		Matrix *r = mx52->multiply(point);
-
-		if (prev != NULL) {
-			drawLine(canvas, prev->getValue(0, 0) / prev->getValue(3, 0), prev->getValue(1, 0) / prev->getValue(3, 0), r->getValue(0, 0) / r->getValue(3, 0), r->getValue(1, 0) / r->getValue(3, 0), 0, 255, 255);
+	
+	/*Matrix *p_1, *p_2, *p_3, *r_1, *r_2, *r_3;
+	Point v_1, v_2, n;
+	uchar intensity;
+	Color c;
+	float dotP;
+	p_1 = new Matrix(4, 1);
+	p_2 = new Matrix(4, 1);
+	p_3 = new Matrix(4, 1);
+	for (int i = 0; i < mx->cols; i+=3)
+	{
+		p_1->setValue(0, 0, mx->getValue(0, i));
+		p_1->setValue(1, 0, mx->getValue(1, i));
+		p_1->setValue(2, 0, mx->getValue(2, i));
+		p_1->setValue(3, 0, 1);
+		p_2->setValue(0, 0, mx->getValue(0, i + 1));
+		p_2->setValue(1, 0, mx->getValue(1, i + 1));
+		p_2->setValue(2, 0, mx->getValue(2, i + 1));
+		p_2->setValue(3, 0, 1);
+		p_3->setValue(0, 0, mx->getValue(0, i + 2));
+		p_3->setValue(1, 0, mx->getValue(1, i + 2));
+		p_3->setValue(2, 0, mx->getValue(2, i + 2));
+		p_3->setValue(3, 0, 1);
+		v_1 = pointDiff(p_1, p_2);
+		v_2 = pointDiff(p_1, p_3);
+		n = vectorCross(v_1, v_2);
+		dotP = -vectorDot(n, gaze);
+		dotP = 1;
+		if (dotP > 0.0)
+		{
+			r_1 = mx5->multiply(p_1);
+			r_2 = mx5->multiply(p_2);
+			r_3 = mx5->multiply(p_3);
+			//intensity = 255 * (dotP/(vectorMag(v_1)*vectorMag(v_2)));
+			intensity = 255;
+			c.r = c.g = c.b = intensity;
+			drawLine(canvas, r_1->getValue(0, 0) / r_1->getValue(3, 0), r_1->getValue(1, 0) / r_1->getValue(3, 0), r_2->getValue(0, 0) / r_2->getValue(3, 0), r_2->getValue(1, 0) / r_2->getValue(3, 0), c);
+			drawLine(canvas, r_1->getValue(0, 0) / r_1->getValue(3, 0), r_1->getValue(1, 0) / r_1->getValue(3, 0), r_3->getValue(0, 0) / r_3->getValue(3, 0), r_3->getValue(1, 0) / r_3->getValue(3, 0), c);
+			drawLine(canvas, r_3->getValue(0, 0) / r_3->getValue(3, 0), r_3->getValue(1, 0) / r_3->getValue(3, 0), r_2->getValue(0, 0) / r_2->getValue(3, 0), r_2->getValue(1, 0) / r_2->getValue(3, 0), c);
+			// drawTriangle(canvas, r_1->getValue(0, 0) / r_1->getValue(3, 0), r_1->getValue(1, 0) / r_1->getValue(3, 0), r_1->getValue(3, 0), r_2->getValue(0, 0) / r_2->getValue(3, 0), r_2->getValue(1, 0) / r_2->getValue(3, 0), r_2->getValue(3, 0), r_3->getValue(0, 0) / r_3->getValue(3, 0), r_3->getValue(1, 0) / r_3->getValue(3, 0), r_3->getValue(3, 0), c);
 		}
+	}*/
+	
+	/* Elimine el otro dibujado sobre matriz */
 
-		if (k < lineEndings.size() && i == lineEndings[k]) {
-			prev = NULL;
-			k++;
-		} else {
-			prev = r;
-		}
-	}
-
-	canvasToPPM(canvas, w, h, "res.ppm");
+	canvasToPPM(canvas, "res.ppm");
 }
 

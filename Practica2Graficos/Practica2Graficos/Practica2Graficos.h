@@ -7,6 +7,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include <limits>
 #include "Matrix.h"
 #include "Point.h"
 #include "LinearTransform.h"

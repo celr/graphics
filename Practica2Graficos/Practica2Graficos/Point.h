@@ -12,6 +12,7 @@ typedef vector<RawPoint> RawFace;
 typedef vector<RawFace> RawMap;
 typedef RawPoint Point;
 
+float vectorDot(Point a, Point b);
 Point vectorScale(float scale, Point v);
 float vectorMag(Point v);
 Point vectorCross(Point a, Point b);

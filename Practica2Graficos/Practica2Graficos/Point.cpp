@@ -1,6 +1,11 @@
 #include "stdafx.h"
 #include "Point.h"
 
+float vectorDot(Point a, Point b)
+{
+	return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+
 Point vectorScale(float scale, Point v) {
 	Point p;
 	p.x = scale * v.x;
