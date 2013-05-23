@@ -1,42 +1,22 @@
+// Practica2Graficos.cpp : Defines the entry point for the console application.
+//
+
+#include "stdafx.h"
+
 /*
- * Red-Cyan anaglyph 3D picture drawing
- * Adonais Romero González
+ * Line drawing algorithm.
  *
+ * This program reads  two pairs of  integers  from standard input,
+ * each one representing  the start and  end coordinates  (x, y) of
+ * a line. Then it prints to standard output a list of coordinates:
+ * the pixels to be drawn in order to draw the line.
  *
- * This program reads a .raw file, representing a 3D model, and generates a red-cyan anaglyph 3D picture from it, saved in PPM format.
- *
- * The program can recieve many parameters as arguments from command line:
- *     f [filename]
- *         File name of the .raw file to be read.
- *     w [width]
- *         Width of the image result.
- *     h [height]
- *         Height of the image result.
- *     c [x] [y] [z]
- *         Indicates the (x, y, z) coordinates of the center of the camera.
- *     d [x] [y] [z]
- *         Direction of projection.
- *     u [x] [y] [z]
- *         Up vector. It must be unitary and perpendicular to the direction of projection.
- *     l [focal_length]
- *         Assign a specific focal length for the camera.
- *     e [separation]
- *         Separation between cameras for anaglyph projection.
- *     s [scale_factor]
- *         The image is scaled to the indicated scale factor.
- *
- * The result is saved in a out.ppm file.
+ * Authors:
+ *   + Carlos E. Lopez Rivas
+ *   + S. Adonais Romero Gonzalez
  */
 
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <cmath>
-#include <limits>
-#include <list>
-using namespace std;
-
-#define BUFFER_SIZE 1024
+#include "Final Project.h"
 
 typedef unsigned char uchar;
 
@@ -47,23 +27,8 @@ typedef struct
 	uchar b;
 } Color;
 
-
 const Color COLOR_BLACK = {0, 0, 0};
 const Color COLOR_WHITE = {255, 255, 255};
-
-typedef struct
-{
-	double **val;
-	int r;
-	int c;
-} Matrix;
-
-typedef struct
-{
-	double x;
-	double y;
-	double z;
-} Point3D;
 
 typedef struct
 {
@@ -73,9 +38,7 @@ typedef struct
 	double **z;
 } Canvas;
 
-typedef list<Point3D> Face3D;
-typedef list<Face3D> Map3D;
-
+int abs(int a);
 void swap(int *, int *);
 
 Canvas *createCanvas(int, int);
@@ -85,345 +48,33 @@ void drawPixelZ(Canvas *, int, int, double, Color);
 void drawLine(Canvas *, int, int, int, int, Color);
 void drawTriangle(Canvas *, int, int, double, int, int, double, int, int, double, Color);
 
-Matrix *createMatrix(int r, int c)
-{
-	int i, j;
-	Matrix *m;
-	m = new Matrix;
-	m->val = new double*[r];
-	for (i = 0; i < r; i++)
-	{
-		m->val[i] = new double[c];
-		for (j = 0; j < c; j++)
-		{
-			m->val[i][j] = 0.0;
+
+Matrix *matrixFromRaw(char *fileName, vector<int> *lineEndings) {
+	ifstream file;
+	file.open(fileName);
+	Matrix *m = new Matrix(4, 0);
+
+	while(!file.eof()) {
+		float x, y, z;
+		string line;
+		stringstream sline;
+		getline(file, line);
+		sline.str(line);
+
+		while(!sline.eof()) {
+			sline >> x >> y >> z;
+			m->addColumn();
+			m->setValue(0, m->cols - 1, x);
+			m->setValue(1, m->cols - 1, y);
+			m->setValue(2, m->cols - 1, z);
+			m->setValue(3, m->cols - 1, 1);
 		}
+
+		// Guardar fines de lineas para separar caras
+		lineEndings->push_back(m->cols - 1);
 	}
-	m->r = r;
-	m->c = c;
-	return m;
-}
-
-Matrix *multMatrix(Matrix *a, Matrix *b)
-{
-	int i, j, k, l;
-	Matrix *c;
-	if (a->c != b->r)
-	{
-		return NULL;
-	}
-	l = a->c;
-	c = createMatrix(a->r, b->c);
-	for (i = 0; i < c->r; i++)
-	{
-		for (j = 0; j < c->c; j++)
-		{
-			for (k = 0; k < l; k++)
-			{
-				c->val[i][j] += a->val[i][k] * b->val[k][j];
-			}
-		}
-	}
-	return c;
-}
-
-Matrix *point3DToMatrix(Point3D p)
-{
-	Matrix *m;
-	m = createMatrix(4, 1);
-	m->val[0][0] = p.x;
-	m->val[1][0] = p.y;
-	m->val[2][0] = p.z;
-	m->val[3][0] = 1.0;
-	return m;
-}
-
-Map3D *openRawMap(const char *filename)
-{
-	FILE *fp;
-	Point3D *p;
-	Face3D *f;
-	Map3D *m;
-	double x;
-	char buffer[BUFFER_SIZE];
-	char *c;
-	fp = fopen(filename, "r");
-	m = new Map3D;
-	while (fgets(buffer, BUFFER_SIZE - 1, fp) != NULL)
-	{
-		f = new Face3D;
-		c = buffer;
-		while (true)
-		{
-			x = strtod(c, &c);
-			if (*(c + 1) == '\n')
-			{
-				break;
-			}
-			p = new Point3D;
-			p->x = x;
-			p->y = strtod(c, &c);
-			p->z = strtod(c, &c);
-			f->push_back(*p);
-		};
-		m->push_back(*f);
-	}
-	return m;
-}
-
-Matrix *createIdentityMatrix(int l)
-{
-	int i;
-	Matrix *m;
-	m = createMatrix(l, l);
-	for (i = 0; i < l; i++)
-	{
-		m->val[i][i] = 1.0;
-	}
-	return m;
-}
-
-double dot3D(Point3D a, Point3D b)
-{
-	return a.x * b.x + a.y * b.y + a.z * b.z;
-}
-
-Point3D cross3D(Point3D a, Point3D b)
-{
-	Point3D c;
-	c.x = a.y * b.z - a.z * b.y;
-	c.y = a.z * b.x - a.x * b.z;
-	c.z = a.x * b.y - a.y * b.x;
-	return c;
-}
-
-Matrix *createProjectionMatrix(Point3D center, Point3D dir, Point3D up, double focus)
-{
-	Matrix *m, *t_1, *t_2;
-	Point3D p;
-	
-	t_1 = createIdentityMatrix(4);
-	t_1->val[0][3] = -center.x;
-	t_1->val[1][3] = -center.y;
-	t_1->val[2][3] = -center.z;
-	
-	p = cross3D(up, dir);
-	
-	t_2 = createMatrix(4, 4);
-	t_2->val[0][0] = p.x;
-	t_2->val[1][0] = up.x;
-	t_2->val[2][0] = dir.x;
-	t_2->val[0][1] = p.y;
-	t_2->val[1][1] = up.y;
-	t_2->val[2][1] = dir.y;
-	t_2->val[0][2] = p.z;
-	t_2->val[1][2] = up.z;
-	t_2->val[2][2] = dir.z;
-	t_2->val[3][3] = 1.0;
-	
-	m = multMatrix(t_2, t_1);
-	delete t_1;
-	delete t_2;
-	t_1 = m;
-	
-	t_2 = createMatrix(4, 4);
-	t_2->val[0][0] = focus;
-	t_2->val[1][1] = focus;
-	t_2->val[2][2] = 1.0;
-	t_2->val[3][2] = 1.0;
-	
-	m = multMatrix(t_2, t_1);
-	delete t_1;
-	delete t_2;
 	
 	return m;
-}
-
-void drawScaledLine(Canvas *canvas, double x_1, double y_1, double x_2, double y_2, double scale_1, double scale_2, Color c)
-{
-	drawLine(canvas, canvas->w / 2 + x_1 * scale_1, canvas->h / 2 + y_1 * scale_1, canvas->w / 2 + x_2 * scale_2, canvas->h / 2 + y_2 * scale_2, c);
-}
-
-void drawScaledTriangle(Canvas *canvas, double x_1, double y_1, double z_1, double x_2, double y_2, double z_2, double x_3, double y_3, double z_3, double scale_1, double scale_2, double scale_3, Color c)
-{
-	int mw = canvas->w / 2;
-	int mh = canvas->h / 2;
-	drawTriangle(canvas, mw + x_1 * scale_1, mh + y_1 * scale_1, z_1, mw + x_2 * scale_2, mh + y_2 * scale_2, z_2, mw + x_3 * scale_3, mh + y_3 * scale_3, z_3, c);
-}
-
-Point3D pointDiff(Point3D a, Point3D b)
-{
-	Point3D c;
-	c.x = a.x - b.x;
-	c.y = a.y - b.y;
-	c.z = a.z - b.z;
-	return c;
-}
-
-double magnitude(Point3D a)
-{
-	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
-}
-
-void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale)
-{
-	Map3D::iterator i;
-	Face3D::iterator j;
-	Face3D f;
-	Point3D p_1, p_2, p_3, v_1, v_2;
-	Point3D n;
-	Matrix *pm, *r_1, *r_2, *r_3;
-	double dotP;
-	Color c;
-	uchar intensity;
-	for (i = map->begin(); i != map->end(); i++)
-	{
-		f = *i;
-		j = f.begin();
-		p_1 = *j;
-		j++;
-		p_2 = *j;
-		j++;
-		p_3 = *j;
-		v_1 = pointDiff(p_1, p_2);
-		v_2 = pointDiff(p_1, p_3);
-		n = cross3D(v_1, v_2);
-		dotP = -dot3D(n, dir);
-		if (dotP > 0.0)
-		{
-			pm = point3DToMatrix(p_1);
-			r_1 = multMatrix(t, pm);
-			pm = point3DToMatrix(p_2);
-			r_2 = multMatrix(t, pm);
-			pm = point3DToMatrix(p_3);
-			r_3 = multMatrix(t, pm);
-			intensity = 255 * (dotP/(magnitude(v_1)*magnitude(v_2)));
-			c.r = c.g = c.b = intensity;
-			drawScaledTriangle(canvas, r_1->val[0][0], r_1->val[1][0], r_1->val[2][0], r_2->val[0][0], r_2->val[1][0], r_2->val[2][0], r_3->val[0][0], r_3->val[1][0], r_3->val[2][0], scale / r_1->val[3][0], scale / r_2->val[3][0], scale / r_3->val[3][0], c);
-		}
-	}
-}
-
-void drawMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale)
-{
-	Map3D::iterator i;
-	Face3D::iterator j;
-	Face3D f;
-	Point3D p_1, p_2, p_3, v_1, v_2;
-	Point3D n;
-	Matrix *pm, *r_1, *r_2, *r_3;
-	for (i = map->begin(); i != map->end(); i++)
-	{
-		f = *i;
-		j = f.begin();
-		p_1 = *j;
-		j++;
-		p_2 = *j;
-		j++;
-		p_3 = *j;
-		v_1 = pointDiff(p_1, p_2);
-		v_2 = pointDiff(p_1, p_3);
-		n = cross3D(v_1, v_2);
-		/*if (dot3D(*n, dir) < 0.0)
-		{*/
-			pm = point3DToMatrix(p_1);
-			r_1 = multMatrix(t, pm);
-			pm = point3DToMatrix(p_2);
-			r_2 = multMatrix(t, pm);
-			pm = point3DToMatrix(p_3);
-			r_3 = multMatrix(t, pm);
-			drawScaledLine(canvas, r_1->val[0][0], r_1->val[1][0], r_2->val[0][0], r_2->val[1][0], scale / r_1->val[3][0], scale / r_2->val[3][0], COLOR_WHITE);
-			drawScaledLine(canvas, r_1->val[0][0], r_1->val[1][0], r_3->val[0][0], r_3->val[1][0], scale / r_1->val[3][0], scale / r_3->val[3][0], COLOR_WHITE);
-			drawScaledLine(canvas, r_2->val[0][0], r_2->val[1][0], r_3->val[0][0], r_3->val[1][0], scale / r_2->val[3][0], scale / r_3->val[3][0], COLOR_WHITE);
-		/*}*/
-	}
-}
-
-void draw3D(Canvas *canvas, Map3D *map, Point3D center, Point3D dir, Point3D up, double focus, double scale)
-{
-	Matrix *t;
-	t = createProjectionMatrix(center, dir, up, focus);
-	drawMap3D(canvas, map, dir, t, scale);
-}
-
-int main(int argc, char **argv) {
-	Map3D *map;
-	Point3D center = {0.0, 0.0, 0.0};
-	Point3D dir = {0.0, 0.0, 1.0};
-	Point3D up = {0.0, 1.0, 0.0};
-	Canvas *canvas;
-	int w, h;
-	int i;
-	double focus, scale;
-	char filename[1024];
-	w = 1920;
-	h = 1080;
-	focus = 1.0;
-	scale = 200.0;
-	strcpy(filename, "in.raw");
-	for (i = 1; i < argc; i++)
-	{
-		if (strcmp(argv[i], "w") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%d", &w);
-		}
-		else if (strcmp(argv[i], "h") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%d", &h);
-		}
-		else if (strcmp(argv[i], "c") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%lf", &center.x);
-			i++;
-			sscanf(argv[i], "%lf", &center.y);
-			i++;
-			sscanf(argv[i], "%lf", &center.z);
-		}
-		else if (strcmp(argv[i], "d") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%lf", &dir.x);
-			i++;
-			sscanf(argv[i], "%lf", &dir.y);
-			i++;
-			sscanf(argv[i], "%lf", &dir.z);
-		}
-		else if (strcmp(argv[i], "u") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%lf", &up.x);
-			i++;
-			sscanf(argv[i], "%lf", &up.y);
-			i++;
-			sscanf(argv[i], "%lf", &up.z);
-		}
-		else if (strcmp(argv[i], "l") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%lf", &focus);
-		}
-		else if (strcmp(argv[i], "s") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%lf", &scale);
-		}
-		else if (strcmp(argv[i], "f") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%s", filename);
-		}
-	}
-	printf("%lf %lf %lf\n", center.x, center.y, center.z);
-	printf("%lf %lf %lf\n", dir.x, dir.y, dir.z);
-	printf("%lf %lf %lf\n", up.x, up.y, up.z);
-	canvas = createCanvas(w, h);
-	map = openRawMap(filename);
-	draw3D(canvas, map, center, dir, up, focus, scale);
-	canvasToPPM(canvas, "out.ppm");
-	return EXIT_SUCCESS;
 }
 
 void swap(int *a, int *b) {
@@ -629,3 +280,84 @@ void canvasToPPM(Canvas *canvas, const char *filename) {
 	fclose(out);
 }
 
+Point pointDiff(Matrix *a, Matrix *b)
+{
+	Point c;
+	c.x = a->getValue(0, 0) - b->getValue(0, 0);
+	c.y = a->getValue(1, 0) - b->getValue(1, 0);
+	c.z = a->getValue(2, 0) - b->getValue(2, 0);
+	return c;
+}
+
+void drawTriangleFromPoints(Canvas *canvas, Matrix *point1, Matrix *point2, Matrix *point3, Color color) {
+	drawTriangle(canvas, point1->getValue(0, 0) / point1->getValue(3, 0), 
+				point1->getValue(1, 0) / point1->getValue(3, 0), 
+				point1->getValue(2, 0) / point1->getValue(3, 0), 
+				point2->getValue(0, 0) / point2->getValue(3, 0),
+				point2->getValue(1, 0) / point2->getValue(3, 0),
+				point2->getValue(2, 0) / point2->getValue(3, 0),
+				point3->getValue(0, 0) / point3->getValue(3, 0),
+				point3->getValue(1, 0) / point3->getValue(3, 0),
+				point3->getValue(2, 0) / point3->getValue(3, 0), color);
+}
+
+void drawMatrix(Canvas *canvas, Matrix *matrix, Matrix *transform, vector<int> *lineEndings) {
+	vector<Matrix *> currentFace(0);
+	for (int i = 0, k = 0; i < matrix->cols; i++) {
+		// Create a small matrix for the current column
+		Matrix *point = new Matrix(4, 1);
+		point->setValue(0, 0, matrix->getValue(0, i));
+		point->setValue(1, 0, matrix->getValue(1, i));
+		point->setValue(2, 0, matrix->getValue(2, i));
+		point->setValue(3, 0, 1);
+
+		// Apply the supplied transform to the point
+		Matrix *transformedPoint = transform->multiply(point);
+
+		if (i > 0 && i % 3 == 0) {
+			// Create triangle for face
+			Matrix *point1 = currentFace[0];
+			Matrix *point2 = currentFace[1];
+			Matrix *point3 = currentFace[2];
+			drawTriangleFromPoints(canvas, point1, point2, point3, COLOR_WHITE);
+			currentFace.clear();
+		}
+
+		currentFace.push_back(transformedPoint);
+	}
+}
+
+int _tmain(int argc, _TCHAR* argv[])
+{
+	int w, h;
+	w = 1000;
+	h = 1000;
+	float d = 0.2; // Distancia entre ojos
+
+	vector<int> lineEndings;
+	Matrix *mx = matrixFromRaw("in.raw", &lineEndings);
+	Matrix *mx2 = LinearTransform::getViewportTransform(w, h);
+	Matrix *mx3 = mx2->multiply(LinearTransform::getOrthographicTransform(-5, 5, -5, 5, -5, 5));
+	Matrix *mx4 = mx3->multiply(LinearTransform::getPerspectiveTransform(-2, 2));
+
+	Point eye;
+	eye.x = 0;
+	eye.y = 2;
+	eye.z = 3;
+
+	Point gaze;
+	gaze.x = 0;
+	gaze.y = 10;
+	gaze.z = 3;
+
+	Point top;
+	top.x = 0;
+	top.y = 1;
+	top.z = 0;
+
+	Matrix *mx5 = mx4->multiply(LinearTransform::getCameraTransform(eye, gaze, top));
+
+	Canvas *canvas = createCanvas(w, h);
+	drawMatrix(canvas, mx, mx5, &lineEndings);
+	canvasToPPM(canvas, "res.ppm");
+}
