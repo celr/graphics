@@ -319,13 +319,22 @@ vector<Color> colorsFromMaterial(char *fileName) {
 	file.open(fileName);
 	Color color;
 
-	while(file >> color.r >> color.g >> color.b) {
+	while(file >> color.r >> color.g >> color.b >> color.i >> color.k) {
 		colors.push_back(color);
 	}
 
 	file.close();
 	
 	return colors;
+}
+
+void cameraFromFile(Point3D *pos, Point3D *dir, Point3D *up, char *fileName) {
+	ifstream file;
+	file.open(fileName);
+	file >> pos->x >> pos->y >> pos->z;
+	file >> dir->x >> dir->y >> dir->z;
+	file >> up->x >> up->y >> up->z;
+	file.close();
 }
 
 void drawMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale)
@@ -436,6 +445,9 @@ int main(int argc, char **argv) {
 	strcpy(rfilename, filename);
 	strcat(rfilename, ".raw");
 	map = openRawMap(rfilename);
+	strcpy(rfilename, filename);
+	strcat(rfilename, ".camera");
+	cameraFromFile(&center, &dir, &up, rfilename);
 	Matrix *t;
 	t = createProjectionMatrix(center, dir, up, -2, 2);
 	if (wireframe)
