@@ -43,6 +43,8 @@ typedef struct
 	unsigned short r;
 	unsigned short g;
 	unsigned short b;
+	double i;
+	unsigned short k;
 } Color;
 
 
@@ -266,6 +268,7 @@ double magnitude(Point3D a)
 
 void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale, vector<Color> material)
 {
+	int k;
 	Map3D::iterator i;
 	Face3D::iterator j;
 	Face3D f;
@@ -274,8 +277,8 @@ void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double 
 	Matrix *pm, *r_1, *r_2, *r_3;
 	double dotP;
 	Color c;
-	uchar intensity;
-	for (i = map->begin(); i != map->end(); i++)
+	double intensity;
+	for (i = map->begin(), k = 0; i != map->end(); i++, k = (k + 1) % material.size())
 	{
 		f = *i;
 		j = f.begin();
@@ -296,12 +299,15 @@ void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double 
 			r_2 = multMatrix(t, pm);
 			pm = point3DToMatrix(p_3);
 			r_3 = multMatrix(t, pm);
-			intensity = 255 * pow((dotP/(magnitude(n)*magnitude(dir))), 1);
-			if (intensity < 12)
+			intensity = pow((dotP/(magnitude(n)*magnitude(dir))), material[k].k);
+			if (intensity < 0.05)
 			{
-				intensity = 12;
+				intensity = 0.05;
 			}
-			c.r = c.g = c.b = intensity;
+			c = material[k];
+			c.r *= intensity * c.i;
+			c.g *= intensity * c.i;
+			c.b *= intensity * c.i;
 			drawScaledTriangle(canvas, r_1->val[0][0], r_1->val[1][0], r_1->val[2][0], r_2->val[0][0], r_2->val[1][0], r_2->val[2][0], r_3->val[0][0], r_3->val[1][0], r_3->val[2][0], scale / r_1->val[3][0], scale / r_2->val[3][0], scale / r_3->val[3][0], c);
 		}
 	}
@@ -428,8 +434,8 @@ int main(int argc, char **argv) {
 	}
 	canvas = createCanvas(w, h);
 	strcpy(rfilename, filename);
-	strcat(filename, ".raw");
-	map = openRawMap(filename);
+	strcat(rfilename, ".raw");
+	map = openRawMap(rfilename);
 	Matrix *t;
 	t = createProjectionMatrix(center, dir, up, -2, 2);
 	if (wireframe)
@@ -439,8 +445,8 @@ int main(int argc, char **argv) {
 	else
 	{
 		strcpy(rfilename, filename);
-		strcat(filename, ".material");
-		vector<Color> cl = colorsFromMaterial(filename);
+		strcat(rfilename, ".material");
+		vector<Color> cl = colorsFromMaterial(rfilename);
 		drawFilledMap3D(canvas, map, dir, t, scale, cl);
 	}
 	canvasToPPM(canvas, "out.ppm");
