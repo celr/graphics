@@ -6,11 +6,11 @@
  * This program reads a .raw file, representing a 3D model, and generates a red-cyan anaglyph 3D picture from it, saved in PPM format.
  *
  * The program can recieve many parameters as arguments from command line:
- *     f [filename]
- *         File name of the .raw file to be read.
- *     w [width]
+ *     [filename]
+ *         File name of the files to be read (in, by default).
+ *     -w [width]
  *         Width of the image result.
- *     h [height]
+ *     -h [height]
  *         Height of the image result.
  *     c [x] [y] [z]
  *         Indicates the (x, y, z) coordinates of the center of the camera.
@@ -18,11 +18,7 @@
  *         Direction of projection.
  *     u [x] [y] [z]
  *         Up vector. It must be unitary and perpendicular to the direction of projection.
- *     l [focal_length]
- *         Assign a specific focal length for the camera.
- *     e [separation]
- *         Separation between cameras for anaglyph projection.
- *     s [scale_factor]
+ *     -s [scale_factor]
  *         The image is scaled to the indicated scale factor.
  *
  * The result is saved in a out.ppm file.
@@ -34,6 +30,8 @@
 #include <cmath>
 #include <limits>
 #include <list>
+#include <vector>
+#include <fstream>
 using namespace std;
 
 #define BUFFER_SIZE 1024
@@ -42,9 +40,9 @@ typedef unsigned char uchar;
 
 typedef struct
 {
-	uchar r;
-	uchar g;
-	uchar b;
+	unsigned short r;
+	unsigned short g;
+	unsigned short b;
 } Color;
 
 
@@ -197,7 +195,7 @@ Point3D cross3D(Point3D a, Point3D b)
 	return c;
 }
 
-Matrix *createProjectionMatrix(Point3D center, Point3D dir, Point3D up, double focus)
+Matrix *createProjectionMatrix(Point3D center, Point3D dir, Point3D up, double near, double far)
 {
 	Matrix *m, *t_1, *t_2;
 	Point3D p;
@@ -227,9 +225,10 @@ Matrix *createProjectionMatrix(Point3D center, Point3D dir, Point3D up, double f
 	t_1 = m;
 	
 	t_2 = createMatrix(4, 4);
-	t_2->val[0][0] = focus;
-	t_2->val[1][1] = focus;
-	t_2->val[2][2] = 1.0;
+	t_2->val[0][0] = near;
+	t_2->val[1][1] = near;
+	t_2->val[2][2] = near + far;
+	t_2->val[2][2] = -far * near;
 	t_2->val[3][2] = 1.0;
 	
 	m = multMatrix(t_2, t_1);
@@ -265,7 +264,7 @@ double magnitude(Point3D a)
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
-void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale)
+void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale, vector<Color> material)
 {
 	Map3D::iterator i;
 	Face3D::iterator j;
@@ -297,11 +296,30 @@ void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double 
 			r_2 = multMatrix(t, pm);
 			pm = point3DToMatrix(p_3);
 			r_3 = multMatrix(t, pm);
-			intensity = 255 * (dotP/(magnitude(v_1)*magnitude(v_2)));
+			intensity = 255 * pow((dotP/(magnitude(n)*magnitude(dir))), 1);
+			if (intensity < 12)
+			{
+				intensity = 12;
+			}
 			c.r = c.g = c.b = intensity;
 			drawScaledTriangle(canvas, r_1->val[0][0], r_1->val[1][0], r_1->val[2][0], r_2->val[0][0], r_2->val[1][0], r_2->val[2][0], r_3->val[0][0], r_3->val[1][0], r_3->val[2][0], scale / r_1->val[3][0], scale / r_2->val[3][0], scale / r_3->val[3][0], c);
 		}
 	}
+}
+
+vector<Color> colorsFromMaterial(char *fileName) {
+	vector<Color> colors;
+	ifstream file;
+	file.open(fileName);
+	Color color;
+
+	while(file >> color.r >> color.g >> color.b) {
+		colors.push_back(color);
+	}
+
+	file.close();
+	
+	return colors;
 }
 
 void drawMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale)
@@ -339,13 +357,6 @@ void drawMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale)
 	}
 }
 
-void draw3D(Canvas *canvas, Map3D *map, Point3D center, Point3D dir, Point3D up, double focus, double scale)
-{
-	Matrix *t;
-	t = createProjectionMatrix(center, dir, up, focus);
-	drawMap3D(canvas, map, dir, t, scale);
-}
-
 int main(int argc, char **argv) {
 	Map3D *map;
 	Point3D center = {0.0, 0.0, 0.0};
@@ -354,21 +365,22 @@ int main(int argc, char **argv) {
 	Canvas *canvas;
 	int w, h;
 	int i;
-	double focus, scale;
+	double scale;
+	bool wireframe = false;
 	char filename[1024];
+	char rfilename[1024];
 	w = 1920;
 	h = 1080;
-	focus = 1.0;
-	scale = 200.0;
-	strcpy(filename, "in.raw");
+	scale = 500.0;
+	strcpy(filename, "in");
 	for (i = 1; i < argc; i++)
 	{
-		if (strcmp(argv[i], "w") == 0)
+		if ((strcmp(argv[i], "-w") == 0) || (strcmp(argv[i], "--width") == 0))
 		{
 			i++;
 			sscanf(argv[i], "%d", &w);
 		}
-		else if (strcmp(argv[i], "h") == 0)
+		else if ((strcmp(argv[i], "-h") == 0) || (strcmp(argv[i], "--height") == 0))
 		{
 			i++;
 			sscanf(argv[i], "%d", &h);
@@ -400,28 +412,37 @@ int main(int argc, char **argv) {
 			i++;
 			sscanf(argv[i], "%lf", &up.z);
 		}
-		else if (strcmp(argv[i], "l") == 0)
-		{
-			i++;
-			sscanf(argv[i], "%lf", &focus);
-		}
-		else if (strcmp(argv[i], "s") == 0)
+		else if ((strcmp(argv[i], "-s") == 0) || (strcmp(argv[i], "--scale") == 0))
 		{
 			i++;
 			sscanf(argv[i], "%lf", &scale);
 		}
-		else if (strcmp(argv[i], "f") == 0)
+		else if ((strcmp(argv[i], "-W") == 0) || (strcmp(argv[i], "--wireframe") == 0))
 		{
-			i++;
+			wireframe = true;
+		}
+		else
+		{
 			sscanf(argv[i], "%s", filename);
 		}
 	}
-	printf("%lf %lf %lf\n", center.x, center.y, center.z);
-	printf("%lf %lf %lf\n", dir.x, dir.y, dir.z);
-	printf("%lf %lf %lf\n", up.x, up.y, up.z);
 	canvas = createCanvas(w, h);
+	strcpy(rfilename, filename);
+	strcat(filename, ".raw");
 	map = openRawMap(filename);
-	draw3D(canvas, map, center, dir, up, focus, scale);
+	Matrix *t;
+	t = createProjectionMatrix(center, dir, up, -2, 2);
+	if (wireframe)
+	{
+		drawMap3D(canvas, map, dir, t, scale);
+	}
+	else
+	{
+		strcpy(rfilename, filename);
+		strcat(filename, ".material");
+		vector<Color> cl = colorsFromMaterial(filename);
+		drawFilledMap3D(canvas, map, dir, t, scale, cl);
+	}
 	canvasToPPM(canvas, "out.ppm");
 	return EXIT_SUCCESS;
 }
