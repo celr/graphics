@@ -20,6 +20,10 @@
  *         Up vector. It must be unitary and perpendicular to the direction of projection.
  *     -s [scale_factor]
  *         The image is scaled to the indicated scale factor.
+ *     --depthdisable
+ *         Disables use of depth buffer
+ *     --ambient
+ *         Uses ambient light (all iluminated at highest intensity).
  *
  * The result is saved in a out.ppm file.
  */
@@ -47,7 +51,6 @@ typedef struct
 	unsigned short k;
 } Color;
 
-
 const Color COLOR_BLACK = {0, 0, 0};
 const Color COLOR_WHITE = {255, 255, 255};
 
@@ -71,6 +74,7 @@ typedef struct
 	int w;
 	int h;
 	double **z;
+	bool zEnabled;
 } Canvas;
 
 typedef list<Point3D> Face3D;
@@ -266,7 +270,7 @@ double magnitude(Point3D a)
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
-void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double scale, vector<Color> material)
+void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, bool ilum, Matrix *t, double scale, vector<Color> material)
 {
 	int k;
 	Map3D::iterator i;
@@ -299,10 +303,17 @@ void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Matrix *t, double 
 			r_2 = multMatrix(t, pm);
 			pm = point3DToMatrix(p_3);
 			r_3 = multMatrix(t, pm);
-			intensity = pow((dotP/(magnitude(n)*magnitude(dir))), material[k].k);
-			if (intensity < 0.05)
+			if (ilum)
 			{
-				intensity = 0.05;
+				intensity = pow((dotP/(magnitude(n)*magnitude(dir))), material[k].k);
+				if (intensity < 0.05)
+				{
+					intensity = 0.05;
+				}
+			}
+			else
+			{
+				intensity = 1.0;
 			}
 			c = material[k];
 			c.r *= intensity * c.i;
@@ -381,6 +392,7 @@ int main(int argc, char **argv) {
 	int w, h;
 	int i;
 	double scale;
+	bool zEn = true, ilum = true;
 	bool wireframe = false;
 	char filename[1024];
 	char rfilename[1024];
@@ -436,12 +448,21 @@ int main(int argc, char **argv) {
 		{
 			wireframe = true;
 		}
+		else if (strcmp(argv[i], "--depthdisable") == 0)
+		{
+			zEn = false;
+		}
+		else if (strcmp(argv[i], "--ambient") == 0)
+		{
+			ilum = false;
+		}
 		else
 		{
 			sscanf(argv[i], "%s", filename);
 		}
 	}
 	canvas = createCanvas(w, h);
+	canvas->zEnabled = zEn;
 	strcpy(rfilename, filename);
 	strcat(rfilename, ".raw");
 	map = openRawMap(rfilename);
@@ -459,7 +480,7 @@ int main(int argc, char **argv) {
 		strcpy(rfilename, filename);
 		strcat(rfilename, ".material");
 		vector<Color> cl = colorsFromMaterial(rfilename);
-		drawFilledMap3D(canvas, map, dir, t, scale, cl);
+		drawFilledMap3D(canvas, map, dir, ilum, t, scale, cl);
 	}
 	canvasToPPM(canvas, "out.ppm");
 	return EXIT_SUCCESS;
@@ -482,7 +503,7 @@ void swapDouble(double *a, double *b) {
 void drawPixelZ(Canvas *canvas, int x, int y, double z, Color c) {
 	if (x < 0 || y < 0 || x >= canvas->w || y >= canvas->h)
 		return;
-	if (z > canvas->z[x][y] || z < 0)
+	if (canvas->zEnabled && (z > canvas->z[x][y] || z < 0))
 		return;
 	canvas->z[x][y] = z;
 	canvas->col[x][y] = c;
@@ -650,6 +671,7 @@ Canvas *createCanvas(int w, int h) {
 	c->w = w;
 	c->h = h;
 	c->z = z;
+	c->zEnabled;
 	return c;
 }
 
