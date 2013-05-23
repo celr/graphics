@@ -22,9 +22,9 @@ typedef unsigned char uchar;
 
 typedef struct
 {
-	uchar r;
-	uchar g;
-	uchar b;
+	unsigned short r;
+	unsigned short g;
+	unsigned short b;
 } Color;
 
 const Color COLOR_BLACK = {0, 0, 0};
@@ -48,6 +48,20 @@ void drawPixelZ(Canvas *, int, int, double, Color);
 void drawLine(Canvas *, int, int, int, int, Color);
 void drawTriangle(Canvas *, int, int, double, int, int, double, int, int, double, Color);
 
+vector<Color> colorsFromMaterial(char *fileName) {
+	vector<Color> colors;
+	ifstream file;
+	file.open(fileName);
+	Color color;
+
+	while(file >> color.r >> color.g >> color.b) {
+		colors.push_back(color);
+	}
+
+	file.close();
+	
+	return colors;
+}
 
 Matrix *matrixFromRaw(char *fileName, vector<int> *lineEndings) {
 	ifstream file;
@@ -301,7 +315,7 @@ void drawTriangleFromPoints(Canvas *canvas, Matrix *point1, Matrix *point2, Matr
 				point3->getValue(2, 0) / point3->getValue(3, 0), color);
 }
 
-void drawMatrix(Canvas *canvas, Matrix *matrix, Matrix *transform, vector<int> *lineEndings) {
+void drawMatrix(Canvas *canvas, Matrix *matrix, Matrix *transform, vector<int> *lineEndings, vector<Color> *colors) {
 	vector<Matrix *> currentFace(0);
 	for (int i = 0, k = 0; i < matrix->cols; i++) {
 		// Create a small matrix for the current column
@@ -319,7 +333,15 @@ void drawMatrix(Canvas *canvas, Matrix *matrix, Matrix *transform, vector<int> *
 			Matrix *point1 = currentFace[0];
 			Matrix *point2 = currentFace[1];
 			Matrix *point3 = currentFace[2];
-			drawTriangleFromPoints(canvas, point1, point2, point3, COLOR_WHITE);
+			Color appliedColor;
+
+			if (k < colors->size()) {
+				appliedColor = (*colors)[k++];
+			} else {
+				appliedColor = COLOR_WHITE;
+			}
+
+			drawTriangleFromPoints(canvas, point1, point2, point3, appliedColor);
 			currentFace.clear();
 		}
 
@@ -335,6 +357,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	float d = 0.2; // Distancia entre ojos
 
 	vector<int> lineEndings;
+	vector<Color> colors = colorsFromMaterial("in.material");
 	Matrix *mx = matrixFromRaw("in.raw", &lineEndings);
 	Matrix *mx2 = LinearTransform::getViewportTransform(w, h);
 	Matrix *mx3 = mx2->multiply(LinearTransform::getOrthographicTransform(-5, 5, -5, 5, -5, 5));
@@ -358,6 +381,6 @@ int _tmain(int argc, _TCHAR* argv[])
 	Matrix *mx5 = mx4->multiply(LinearTransform::getCameraTransform(eye, gaze, top));
 
 	Canvas *canvas = createCanvas(w, h);
-	drawMatrix(canvas, mx, mx5, &lineEndings);
+	drawMatrix(canvas, mx, mx5, &lineEndings, &colors);
 	canvasToPPM(canvas, "res.ppm");
 }
