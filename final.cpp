@@ -1,9 +1,10 @@
 /*
- * Red-Cyan anaglyph 3D picture drawing
+ * 3D picture drawing
+ * Carlos López Rivas
  * Adonais Romero González
  *
  *
- * This program reads a .raw file, representing a 3D model, and generates a red-cyan anaglyph 3D picture from it, saved in PPM format.
+ * This program reads a .raw file, representing a 3D model, and generates a projected 2D picture from it, saved in PPM format.
  *
  * The program can recieve many parameters as arguments from command line:
  *     [filename]
@@ -23,7 +24,7 @@
  *     --depthdisable
  *         Disables use of depth buffer
  *     --ambient
- *         Uses ambient light (all iluminated at highest intensity).
+ *         Uses ambient light (all faces illuminated at highest intensity).
  *
  * The result is saved in a out.ppm file.
  */
@@ -270,7 +271,7 @@ double magnitude(Point3D a)
 	return sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
 }
 
-void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, bool ilum, Matrix *t, double scale, vector<Color> material)
+void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, Point3D light, bool ilum, Matrix *t, double scale, vector<Color> material)
 {
 	int k;
 	Map3D::iterator i;
@@ -305,7 +306,7 @@ void drawFilledMap3D(Canvas *canvas, Map3D *map, Point3D dir, bool ilum, Matrix 
 			r_3 = multMatrix(t, pm);
 			if (ilum)
 			{
-				intensity = pow((dotP/(magnitude(n)*magnitude(dir))), material[k].k);
+				intensity = pow((-dot3D(n, light)/(magnitude(n)*magnitude(light))), material[k].k);
 				if (intensity < 0.05)
 				{
 					intensity = 0.05;
@@ -345,6 +346,14 @@ void cameraFromFile(Point3D *pos, Point3D *dir, Point3D *up, char *fileName) {
 	file >> pos->x >> pos->y >> pos->z;
 	file >> dir->x >> dir->y >> dir->z;
 	file >> up->x >> up->y >> up->z;
+	file.close();
+}
+
+Point3D lightFromFile(char *fileName) {
+	Point3D light;
+	ifstream file;
+	file.open(fileName);
+	file >> light.x >> light.y >> light.z;
 	file.close();
 }
 
@@ -388,6 +397,7 @@ int main(int argc, char **argv) {
 	Point3D center = {0.0, 0.0, 0.0};
 	Point3D dir = {0.0, 0.0, 1.0};
 	Point3D up = {0.0, 1.0, 0.0};
+	Point3D light = {0.0, 0.0, 1.0};
 	Canvas *canvas;
 	int w, h;
 	int i;
@@ -467,7 +477,7 @@ int main(int argc, char **argv) {
 	strcat(rfilename, ".raw");
 	map = openRawMap(rfilename);
 	strcpy(rfilename, filename);
-	strcat(rfilename, ".camera");
+	strcat(rfilename, ".scene");
 	cameraFromFile(&center, &dir, &up, rfilename);
 	Matrix *t;
 	t = createProjectionMatrix(center, dir, up, -2, 2);
@@ -480,7 +490,10 @@ int main(int argc, char **argv) {
 		strcpy(rfilename, filename);
 		strcat(rfilename, ".material");
 		vector<Color> cl = colorsFromMaterial(rfilename);
-		drawFilledMap3D(canvas, map, dir, ilum, t, scale, cl);
+		strcpy(rfilename, filename);
+		strcat(rfilename, ".light");
+		light = lightFromFile(rfilename);
+		drawFilledMap3D(canvas, map, dir, light, ilum, t, scale, cl);
 	}
 	canvasToPPM(canvas, "out.ppm");
 	return EXIT_SUCCESS;
