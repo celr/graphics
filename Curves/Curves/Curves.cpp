@@ -3,11 +3,9 @@
 // Carlos López Rivas
 // Adonais Romero González
 //
-// This program reads a .curve file representing a curve and generates a PPM picture from it.
+// This program reads a in.curve file representing a curve and generates a PPM picture from it.
 // The program draws a Bézier curve by default, the user can pass the -hc command line argument to draw a Hermit curve instead.
 // The program can receive many parameters from command line:
-//     [filename]
-//         File name of the files to be read (in, by default).
 //     -w [width]
 //         Width of the image result.
 //     -h [height]
